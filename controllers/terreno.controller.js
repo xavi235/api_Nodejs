@@ -93,7 +93,6 @@ const getTerrenoPorId = async (req, res) => {
       enlace_ubicacion: terreno.enlace_ubicacion,
       tamano: terreno.tamano,
       servicios_basicos: terreno.servicios_basicos,
-      superficie: terreno.superficie,
       imagenes: terreno.imagenes ? terreno.imagenes.split(',') : [],
       usuario: {
         id_usuario: terreno.id_usuario,
