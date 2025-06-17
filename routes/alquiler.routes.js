@@ -10,5 +10,6 @@ router.get('/independientes', alquilerController.getAlquileresDeUsuariosIndepend
 router.get('/:id', alquilerController.getAlquilerPorId);
 router.get('/', alquilerController.getTodosLosAlquileres);
 router.post('/', upload.array('imagenes', 3), alquilerController.crearAlquiler);
+router.get('/usuario/:idUsuario', alquilerController.getAlquileresPorUsuario);
 
 module.exports = router;

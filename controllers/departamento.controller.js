@@ -170,6 +170,49 @@ const crearDepartamento = async (req, res) => {
   }
 };
 
+const getDepartamentosPorUsuario = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const departamentos = await Departamento.getDepartamentosPorUsuario(idUsuario);
+
+    const formateados = departamentos.map(dep => ({
+      id_departamento: dep.id_departamento,
+      titulo: dep.titulo,
+      descripcion: dep.descripcion,
+      precio: dep.precio,
+      estado: dep.estado,
+      fecha_publicacion: dep.fecha_publicacion,
+      enlace_ubicacion: dep.enlace_ubicacion,
+      habitaciones: dep.habitaciones,
+      banos: dep.banos,
+      piso: dep.piso,
+      imagenes: dep.imagenes ? dep.imagenes.split(',') : [],
+      usuario: {
+        id_usuario: dep.id_usuario,
+        nombre_usuario: dep.nombre_usuario,
+        correo: dep.correo,
+        contacto: dep.contacto
+      },
+      ciudad: {
+        id_ciudad: dep.id_ciudad,
+        nombre_ciudad: dep.nombre_ciudad
+      },
+      empresa: dep.id_empresa ? {
+        id_empresa: dep.id_empresa,
+        nombre_empresa: dep.nombre_empresa,
+        descripcion: dep.descripcion_empresa,
+        telefono: dep.telefono_empresa,
+        correo: dep.correo_empresa
+      } : null
+    }));
+
+    res.json(formateados);
+  } catch (error) {
+    console.error('Error al obtener departamentos del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener departamentos del usuario' });
+  }
+};
+
 module.exports = {
-  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento
+  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento,getDepartamentosPorUsuario
 };

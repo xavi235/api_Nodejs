@@ -91,8 +91,7 @@ const getTerrenoPorId = async (req, res) => {
       estado: terreno.estado,
       fecha_publicacion: terreno.fecha_publicacion,
       enlace_ubicacion: terreno.enlace_ubicacion,
-      tamano: terreno.tamano,
-      servicios_basicos: terreno.servicios_basicos,
+      superficie: terreno.superficie,
       imagenes: terreno.imagenes ? terreno.imagenes.split(',') : [],
       usuario: {
         id_usuario: terreno.id_usuario,
@@ -162,7 +161,48 @@ const crearTerreno = async (req, res) => {
   }
 };
 
+const getTerrenosPorUsuario = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const terrenos = await Terreno.getTerrenosPorUsuario(idUsuario);
+
+    const formateados = terrenos.map(t => ({
+      id_terreno: t.id_terreno,
+      titulo: t.titulo,
+      descripcion: t.descripcion,
+      precio: t.precio,
+      estado: t.estado,
+      fecha_publicacion: t.fecha_publicacion,
+      enlace_ubicacion: t.enlace_ubicacion,
+      superficie: t.superficie,
+      imagenes: t.imagenes ? t.imagenes.split(',') : [],
+      usuario: {
+        id_usuario: t.id_usuario,
+        nombre_usuario: t.nombre_usuario,
+        correo: t.correo,
+        contacto: t.contacto
+      },
+      ciudad: {
+        id_ciudad: t.id_ciudad,
+        nombre_ciudad: t.nombre_ciudad
+      },
+      empresa: t.id_empresa ? {
+        id_empresa: t.id_empresa,
+        nombre_empresa: t.nombre_empresa,
+        descripcion: t.descripcion_empresa,
+        telefono: t.telefono_empresa,
+        correo: t.correo_empresa
+      } : null
+    }));
+
+    res.json(formateados);
+  } catch (error) {
+    console.error('Error al obtener terrenos por usuario:', error);
+    res.status(500).json({ error: 'Error al obtener terrenos por usuario' });
+  }
+};
+
 module.exports = {
-  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno
+  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario
 };
 

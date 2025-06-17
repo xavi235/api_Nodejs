@@ -168,7 +168,50 @@ const crearAlquiler = async (req, res) => {
   }
 };
 
+const getAlquileresPorUsuario = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const alquileres = await Alquiler.getAlquileresPorUsuario(idUsuario);
+
+    const formateados = alquileres.map(a => ({
+      id_alquiler: a.id_alquiler,
+      titulo: a.titulo,
+      descripcion: a.descripcion,
+      precio_mensual: a.precio_mensual,
+      estado: a.estado,
+      fecha_publicacion: a.fecha_publicacion,
+      enlace_ubicacion: a.enlace_ubicacion,
+      amoblado: a.amoblado,
+      tiempo_minimo_meses: a.tiempo_minimo_meses,
+      incluye_servicios: a.incluye_servicios,
+      imagenes: a.imagenes ? a.imagenes.split(',') : [],
+      usuario: {
+        id_usuario: a.id_usuario,
+        nombre_usuario: a.nombre_usuario,
+        correo: a.correo,
+        contacto: a.contacto
+      },
+      ciudad: {
+        id_ciudad: a.id_ciudad,
+        nombre_ciudad: a.nombre_ciudad
+      },
+      empresa: a.id_empresa ? {
+        id_empresa: a.id_empresa,
+        nombre_empresa: a.nombre_empresa,
+        descripcion: a.descripcion_empresa,
+        telefono: a.telefono_empresa,
+        correo: a.correo_empresa
+      } : null
+    }));
+
+    res.json(formateados);
+  } catch (error) {
+    console.error('Error al obtener alquileres por usuario:', error);
+    res.status(500).json({ message: 'Error al obtener alquileres del usuario' });
+  }
+};
+
 module.exports = {
-  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler
+  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler,getAlquileresPorUsuario
 };
 

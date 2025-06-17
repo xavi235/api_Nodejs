@@ -172,6 +172,51 @@ const crearCasa = async (req, res) => {
   }
 };
 
+const getCasasPorUsuario = async (req, res) => {
+  try {
+    const { idUsuario } = req.params;
+    const casas = await Casa.getCasasPorUsuario(idUsuario);
+
+    const formateadas = casas.map(casa => ({
+      id_casa: casa.id_casa,
+      titulo: casa.titulo,
+      descripcion: casa.descripcion,
+      precio: casa.precio,
+      estado: casa.estado,
+      fecha_publicacion: casa.fecha_publicacion,
+      enlace_ubicacion: casa.enlace_ubicacion,
+      habitaciones: casa.habitaciones,
+      banos: casa.banos,
+      cochera: casa.cochera,
+      pisos: casa.pisos,
+      imagenes: casa.imagenes ? casa.imagenes.split(',') : [],
+      usuario: {
+        id_usuario: casa.id_usuario,
+        nombre_usuario: casa.nombre_usuario,
+        correo: casa.correo,
+        contacto: casa.contacto
+      },
+      ciudad: {
+        id_ciudad: casa.id_ciudad || null,
+        nombre_ciudad: casa.nombre_ciudad || null
+      },
+      empresa: casa.id_empresa ? {
+        id_empresa: casa.id_empresa,
+        nombre_empresa: casa.nombre_empresa,
+        descripcion: casa.descripcion_empresa,
+        telefono: casa.telefono_empresa,
+        correo: casa.correo_empresa
+      } : null
+    }));
+
+    res.json(formateadas);
+  } catch (error) {
+    console.error('Error al obtener casas por usuario:', error);
+    res.status(500).json({ message: 'Error al obtener casas por usuario' });
+  }
+};
+
+
 module.exports = {
-  getCasasPorEmpresaYCiudad,getCasasDeUsuariosIndependientes,getCasaPorId,getTodasLasCasas,crearCasa
+  getCasasPorEmpresaYCiudad,getCasasDeUsuariosIndependientes,getCasaPorId,getTodasLasCasas,crearCasa,getCasasPorUsuario
 };

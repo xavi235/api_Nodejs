@@ -162,8 +162,38 @@ crearDepartamento: (data, imagenes) => {
         });
       });
     });
-  }
+  },
+  getDepartamentosPorUsuario: (idUsuario) => {
+  const sql = `
+    SELECT 
+      Departamento.*,
+      Usuario.nombre_usuario,
+      Usuario.correo,
+      Usuario.contacto,
+      Ciudad.id_ciudad,
+      Ciudad.nombre AS nombre_ciudad,
+      Empresa.id_empresa,
+      Empresa.nombre AS nombre_empresa,
+      Empresa.descripcion AS descripcion_empresa,
+      Empresa.contacto AS telefono_empresa,
+      Empresa.correo AS correo_empresa,
+      GROUP_CONCAT(ImagenDepartamento.url_imagen) AS imagenes
+    FROM Departamento
+    JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
+    LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
+    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+    LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
+    WHERE Usuario.id_usuario = ?
+    GROUP BY Departamento.id_departamento;
+  `;
 
+  return new Promise((resolve, reject) => {
+    db.query(sql, [idUsuario], (err, results) => {
+      if (err) reject(err);
+      else resolve(results);
+    });
+  });
+},
 };
 
 module.exports = Departamento;

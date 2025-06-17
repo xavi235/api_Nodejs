@@ -10,5 +10,7 @@ router.get('/independientes', casaController.getCasasDeUsuariosIndependientes);
 router.get('/:id', casaController.getCasaPorId);
 router.get('/', casaController.getTodasLasCasas);
 router.post('/', upload.array('imagenes', 3), casaController.crearCasa);
+router.get('/usuario/:idUsuario', casaController.getCasasPorUsuario);
+
 
 module.exports = router;

@@ -164,7 +164,39 @@ crearCasa: (data, imagenes) => {
       });
     });
   });
+},
+
+getCasasPorUsuario: (idUsuario) => {
+  const sql = `
+    SELECT 
+      Casa.*,
+      Usuario.nombre_usuario,
+      Usuario.correo,
+      Usuario.contacto,
+      Ciudad.nombre AS nombre_ciudad,
+      Empresa.id_empresa,
+      Empresa.nombre AS nombre_empresa,
+      Empresa.descripcion AS descripcion_empresa,
+      Empresa.contacto AS telefono_empresa,
+      Empresa.correo AS correo_empresa,
+      GROUP_CONCAT(ImagenCasa.url_imagen) AS imagenes
+    FROM Casa
+    JOIN Usuario ON Casa.id_usuario = Usuario.id_usuario
+    LEFT JOIN Ciudad ON Casa.id_ciudad = Ciudad.id_ciudad
+    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+    LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
+    WHERE Usuario.id_usuario = ?
+    GROUP BY Casa.id_casa;
+  `;
+
+  return new Promise((resolve, reject) => {
+    db.query(sql, [idUsuario], (err, results) => {
+      if (err) reject(err);
+      else resolve(results);
+    });
+  });
 }
 };
+
 
 module.exports = Casa;

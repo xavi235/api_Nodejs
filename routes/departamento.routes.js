@@ -10,5 +10,6 @@ router.get('/independientes', departamentoController.getDepartamentosDeUsuariosI
 router.get('/:id', departamentoController.getDepartamentoPorId);
 router.get('/', departamentoController.getTodosLosDepartamentos);
 router.post('/', upload.array('imagenes', 3), departamentoController.crearDepartamento);
+router.get('/usuario/:idUsuario', departamentoController.getDepartamentosPorUsuario);
 
 module.exports = router;

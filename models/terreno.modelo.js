@@ -161,7 +161,38 @@ crearTerreno: (data, imagenes) => {
         });
       });
     });
-  }
+  },
+  getTerrenosPorUsuario: (idUsuario) => {
+  const sql = `
+    SELECT 
+      Terreno.*,
+      Usuario.nombre_usuario,
+      Usuario.correo,
+      Usuario.contacto,
+      Ciudad.id_ciudad,
+      Ciudad.nombre AS nombre_ciudad,
+      Empresa.id_empresa,
+      Empresa.nombre AS nombre_empresa,
+      Empresa.descripcion AS descripcion_empresa,
+      Empresa.contacto AS telefono_empresa,
+      Empresa.correo AS correo_empresa,
+      GROUP_CONCAT(ImagenTerreno.url_imagen) AS imagenes
+    FROM Terreno
+    JOIN Usuario ON Terreno.id_usuario = Usuario.id_usuario
+    LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
+    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+    LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
+    WHERE Usuario.id_usuario = ?
+    GROUP BY Terreno.id_terreno;
+  `;
+  return new Promise((resolve, reject) => {
+    db.query(sql, [idUsuario], (err, results) => {
+      if (err) reject(err);
+      else resolve(results);
+    });
+  });
+},
+
 
 };
 
