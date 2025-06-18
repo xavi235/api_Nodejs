@@ -9,7 +9,7 @@ router.get('/empresa/:idEmpresa/ciudad/:idCiudad', alquilerController.getAlquile
 router.get('/independientes', alquilerController.getAlquileresDeUsuariosIndependientes);
 router.get('/:id', alquilerController.getAlquilerPorId);
 router.get('/', alquilerController.getTodosLosAlquileres);
-router.post('/', upload.array('imagenes', 3), alquilerController.crearAlquiler);
+router.post('/', upload, alquilerController.crearAlquiler);
 router.get('/usuario/:idUsuario', alquilerController.getAlquileresPorUsuario);
 
 module.exports = router;

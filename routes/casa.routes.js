@@ -9,8 +9,7 @@ router.get('/empresa/:idEmpresa/ciudad/:idCiudad', casaController.getCasasPorEmp
 router.get('/independientes', casaController.getCasasDeUsuariosIndependientes);
 router.get('/:id', casaController.getCasaPorId);
 router.get('/', casaController.getTodasLasCasas);
-router.post('/', upload.array('imagenes', 3), casaController.crearCasa);
+router.post('/', upload, casaController.crearCasa);
 router.get('/usuario/:idUsuario', casaController.getCasasPorUsuario);
-
 
 module.exports = router;

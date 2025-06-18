@@ -9,7 +9,7 @@ router.get('/empresa/:idEmpresa/ciudad/:idCiudad', terrenoController.getTerrenos
 router.get('/independientes', terrenoController.getTerrenosDeUsuariosIndependientes );
 router.get('/:id', terrenoController.getTerrenoPorId);
 router.get('/', terrenoController.getTodosLosTerrenos);
-router.post('/', upload.array('imagenes', 3), terrenoController.crearTerreno);
+router.post('/', upload, terrenoController.crearTerreno);
 router.get('/usuario/:idUsuario', terrenoController.getTerrenosPorUsuario);
 
 module.exports = router;

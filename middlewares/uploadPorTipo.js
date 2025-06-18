@@ -20,7 +20,10 @@ const getUploadMiddleware = (tipo) => {
     }
   });
 
-  return multer({ storage });
+  const upload = multer({ storage });
+
+
+  return upload.array('imagenes', 3);
 };
 
 module.exports = getUploadMiddleware;
