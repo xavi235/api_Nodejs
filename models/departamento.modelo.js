@@ -20,7 +20,7 @@ const Departamento = {
       LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-      WHERE Usuario.id_empresa = ? AND Departamento.id_ciudad = ?
+      WHERE Usuario.id_empresa = ? AND Departamento.id_ciudad = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
     return new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@ const Departamento = {
       LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-      WHERE Usuario.id_empresa IS NULL
+      WHERE Usuario.id_empresa IS NULL AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
     return new Promise((resolve, reject) => {
@@ -76,7 +76,7 @@ const Departamento = {
       JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
       LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-      WHERE Departamento.id_departamento = ?
+      WHERE Departamento.id_departamento = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
     return new Promise((resolve, reject) => {
@@ -106,6 +106,7 @@ const Departamento = {
     LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
+    WHERE Departamento.estado = 1
     GROUP BY Departamento.id_departamento;
   `;
   return new Promise((resolve, reject) => {
@@ -183,7 +184,7 @@ crearDepartamento: (data, imagenes) => {
     LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-    WHERE Usuario.id_usuario = ?
+    WHERE Usuario.id_usuario = ? AND Departamento.estado = 1
     GROUP BY Departamento.id_departamento;
   `;
 
@@ -194,6 +195,17 @@ crearDepartamento: (data, imagenes) => {
     });
   });
 },
+desactivarDepartamento: (id) => {
+  const sql = `UPDATE Departamento SET estado = 0 WHERE id_departamento = ?`;
+
+  return new Promise((resolve, reject) => {
+    db.query(sql, [id], (err, result) => {
+      if (err) reject(err);
+      else resolve({ affectedRows: result.affectedRows });
+    });
+  });
+}
+
 };
 
 module.exports = Departamento;

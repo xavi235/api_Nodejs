@@ -11,5 +11,6 @@ router.get('/:id', terrenoController.getTerrenoPorId);
 router.get('/', terrenoController.getTodosLosTerrenos);
 router.post('/', upload, terrenoController.crearTerreno);
 router.get('/usuario/:idUsuario', terrenoController.getTerrenosPorUsuario);
+router.delete('/:id', terrenoController.desactivarTerreno);
 
 module.exports = router;

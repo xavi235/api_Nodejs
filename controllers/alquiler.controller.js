@@ -211,7 +211,23 @@ const getAlquileresPorUsuario = async (req, res) => {
   }
 };
 
+const desactivarAlquiler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resultado = await Alquiler.desactivarAlquiler(id);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ message: 'Alquiler no encontrada' });
+    }
+
+    res.json({ message: 'Alquiler desactivada correctamente' });
+  } catch (error) {
+    console.error('Error al desactivar alquiler:', error);
+    res.status(500).json({ message: 'Error al desactivar el alquiler' });
+  }
+};
+
 module.exports = {
-  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler,getAlquileresPorUsuario
+  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler,getAlquileresPorUsuario,desactivarAlquiler
 };
 

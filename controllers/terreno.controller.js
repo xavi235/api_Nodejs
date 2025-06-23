@@ -202,7 +202,24 @@ const getTerrenosPorUsuario = async (req, res) => {
   }
 };
 
+const desactivarTerreno = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resultado = await Terreno.desactivarTerreno(id);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ message: 'Terreno no encontrada' });
+    }
+
+    res.json({ message: 'Terreno desactivada correctamente' });
+  } catch (error) {
+    console.error('Error al desactivar terreno:', error);
+    res.status(500).json({ message: 'Error al desactivar el terreno' });
+  }
+};
+
+
 module.exports = {
-  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario
+  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario,desactivarTerreno
 };
 

@@ -11,5 +11,7 @@ router.get('/:id', casaController.getCasaPorId);
 router.get('/', casaController.getTodasLasCasas);
 router.post('/', upload, casaController.crearCasa);
 router.get('/usuario/:idUsuario', casaController.getCasasPorUsuario);
+router.delete('/:id', casaController.desactivarCasa);
+router.put('/:id', upload, casaController.actualizarCasa);
 
 module.exports = router;

@@ -213,6 +213,23 @@ const getDepartamentosPorUsuario = async (req, res) => {
   }
 };
 
+const desactivarDepartamento = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resultado = await Departamento.desactivarDepartamento(id);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ message: 'Departamento no encontrada' });
+    }
+
+    res.json({ message: 'Departamento desactivada correctamente' });
+  } catch (error) {
+    console.error('Error al desactivar departamento:', error);
+    res.status(500).json({ message: 'Error al desactivar el departamento' });
+  }
+};
+
+
 module.exports = {
-  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento,getDepartamentosPorUsuario
+  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento,getDepartamentosPorUsuario,desactivarDepartamento
 };

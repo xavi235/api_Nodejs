@@ -216,7 +216,37 @@ const getCasasPorUsuario = async (req, res) => {
   }
 };
 
+const desactivarCasa = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const resultado = await Casa.desactivarCasa(id);
+
+    if (resultado.affectedRows === 0) {
+      return res.status(404).json({ message: 'Casa no encontrada' });
+    }
+
+    res.json({ message: 'Casa desactivada correctamente' });
+  } catch (error) {
+    console.error('Error al desactivar casa:', error);
+    res.status(500).json({ message: 'Error al desactivar la casa' });
+  }
+};
+
+const actualizarCasa = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const imagenes = req.files;
+
+    const resultado = await Casa.actualizarCasa(id, data, imagenes);
+    res.json({ message: resultado.message });
+  } catch (error) {
+    console.error('Error al actualizar la casa:', error);
+    res.status(500).json({ error: 'Error al actualizar la casa' });
+  }
+};
+
 
 module.exports = {
-  getCasasPorEmpresaYCiudad,getCasasDeUsuariosIndependientes,getCasaPorId,getTodasLasCasas,crearCasa,getCasasPorUsuario
+  getCasasPorEmpresaYCiudad,getCasasDeUsuariosIndependientes,getCasaPorId,getTodasLasCasas,crearCasa,getCasasPorUsuario,desactivarCasa,actualizarCasa
 };

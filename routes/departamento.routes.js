@@ -11,5 +11,6 @@ router.get('/:id', departamentoController.getDepartamentoPorId);
 router.get('/', departamentoController.getTodosLosDepartamentos);
 router.post('/', upload, departamentoController.crearDepartamento);
 router.get('/usuario/:idUsuario', departamentoController.getDepartamentosPorUsuario);
+router.delete('/:id', departamentoController.desactivarDepartamento);
 
 module.exports = router;

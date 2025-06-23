@@ -20,7 +20,7 @@ const Casa = {
       LEFT JOIN Ciudad ON Casa.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
-      WHERE Usuario.id_empresa = ? AND Casa.id_ciudad = ?
+      WHERE Usuario.id_empresa = ? AND Casa.id_ciudad = ? AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
 
@@ -52,6 +52,7 @@ const Casa = {
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
       WHERE Usuario.id_empresa IS NULL
+        AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
 
@@ -78,6 +79,7 @@ const Casa = {
       LEFT JOIN Ciudad ON Casa.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
       WHERE Casa.id_casa = ?
+        AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
     return new Promise((resolve, reject) => {
@@ -107,6 +109,7 @@ const Casa = {
     LEFT JOIN Ciudad ON Casa.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
+    WHERE Casa.estado = 1
     GROUP BY Casa.id_casa;
   `;
   return new Promise((resolve, reject) => {
@@ -186,6 +189,7 @@ getCasasPorUsuario: (idUsuario) => {
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenCasa ON Casa.id_casa = ImagenCasa.id_casa
     WHERE Usuario.id_usuario = ?
+      AND Casa.estado = 1
     GROUP BY Casa.id_casa;
   `;
 
@@ -195,8 +199,78 @@ getCasasPorUsuario: (idUsuario) => {
       else resolve(results);
     });
   });
-}
+},
+desactivarCasa: (id) => {
+  const sql = `UPDATE Casa SET estado = 0 WHERE id_casa = ?`;
+
+  return new Promise((resolve, reject) => {
+    db.query(sql, [id], (err, result) => {
+      if (err) reject(err);
+      else resolve({ affectedRows: result.affectedRows });
+    });
+  });
+},
+actualizarCasa: (idCasa, data, imagenes) => {
+  return new Promise((resolve, reject) => {
+    const {
+      titulo,
+      descripcion,
+      precio,
+      enlace_ubicacion,
+      habitaciones,
+      banos,
+      cochera,
+      pisos,
+      id_ciudad,
+      estado
+    } = data;
+
+    const sqlUpdate = `
+      UPDATE Casa SET
+        titulo = ?,
+        descripcion = ?,
+        precio = ?,
+        enlace_ubicacion = ?,
+        habitaciones = ?,
+        banos = ?,
+        cochera = ?,
+        pisos = ?,
+        id_ciudad = ?,
+        estado = ?
+      WHERE id_casa = ?
+    `;
+
+    db.query(sqlUpdate, [
+      titulo, descripcion, precio, enlace_ubicacion,
+      habitaciones, banos, cochera, pisos, id_ciudad, estado || 1, idCasa
+    ], (err, result) => {
+      if (err) return reject(err);
+
+      if (!imagenes || imagenes.length === 0) {
+        return resolve({ message: 'Casa actualizada sin cambiar imágenes' });
+      }
+
+      const sqlDeleteImgs = `DELETE FROM ImagenCasa WHERE id_casa = ?`;
+
+      db.query(sqlDeleteImgs, [idCasa], (err) => {
+        if (err) return reject(err);
+
+        const sqlInsertImgs = `INSERT INTO ImagenCasa (id_casa, url_imagen) VALUES ?`;
+        const valores = imagenes.map(img => [idCasa, `/imagenes/casas/${img.filename}`]);
+
+        db.query(sqlInsertImgs, [valores], (err) => {
+          if (err) return reject(err);
+          resolve({ message: 'Casa actualizada con nuevas imágenes' });
+        });
+      });
+    });
+  });
+},
+
+
 };
+
+
 
 
 module.exports = Casa;

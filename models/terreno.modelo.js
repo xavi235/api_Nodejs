@@ -20,7 +20,7 @@ const Terreno = {
       LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
-      WHERE Usuario.id_empresa = ? AND Terreno.id_ciudad = ?
+      WHERE Usuario.id_empresa = ? AND Terreno.id_ciudad = ? AND Terreno.estado = 1
       GROUP BY Terreno.id_terreno;
     `;
     return new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@ const Terreno = {
       LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
-      WHERE Usuario.id_empresa IS NULL
+      WHERE Usuario.id_empresa IS NULL AND Terreno.estado = 1
       GROUP BY Terreno.id_terreno;
     `;
     return new Promise((resolve, reject) => {
@@ -76,7 +76,7 @@ const Terreno = {
       JOIN Usuario ON Terreno.id_usuario = Usuario.id_usuario
       LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
-      WHERE Terreno.id_terreno = ?
+      WHERE Terreno.id_terreno = ? AND Terreno.estado = 1
       GROUP BY Terreno.id_terreno;
     `;
     return new Promise((resolve, reject) => {
@@ -106,6 +106,7 @@ const Terreno = {
     LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
+    WHERE Terreno.estado = 1
     GROUP BY Terreno.id_terreno;
   `;
   return new Promise((resolve, reject) => {
@@ -182,7 +183,7 @@ crearTerreno: (data, imagenes) => {
     LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
-    WHERE Usuario.id_usuario = ?
+    WHERE Usuario.id_usuario = ? AND Terreno.estado = 1
     GROUP BY Terreno.id_terreno;
   `;
   return new Promise((resolve, reject) => {
@@ -193,6 +194,16 @@ crearTerreno: (data, imagenes) => {
   });
 },
 
+desactivarTerreno: (id) => {
+  const sql = `UPDATE Terreno SET estado = 0 WHERE id_terreno = ?`;
+
+  return new Promise((resolve, reject) => {
+    db.query(sql, [id], (err, result) => {
+      if (err) reject(err);
+      else resolve({ affectedRows: result.affectedRows });
+    });
+  });
+}
 
 };
 

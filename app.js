@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const app = express();
 const cors = require('cors');
+const imagenRoutes = require('./routes/imagen.routes');
 
 app.use(cors());
 app.use('/imagenes', express.static(path.join(__dirname, 'public', 'imagenes')));
@@ -23,6 +24,7 @@ app.use('/api/casas', casaRoutes);
 app.use('/api/alquileres', alquilerRoutes);
 app.use('/api/departamentos', departamentoRoutes);
 app.use('/api/terrenos', terrenoRoutes);
+app.use('/api/imagenes', imagenRoutes);
 
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {

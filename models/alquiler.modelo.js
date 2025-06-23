@@ -20,7 +20,7 @@ const Alquiler = {
       LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
-      WHERE Usuario.id_empresa = ? AND Alquiler.id_ciudad = ?
+      WHERE Usuario.id_empresa = ? AND Alquiler.id_ciudad = ? AND Alquiler.estado = 1
       GROUP BY Alquiler.id_alquiler;
     `;
 
@@ -53,7 +53,7 @@ const Alquiler = {
       LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
-      WHERE Usuario.id_empresa IS NULL
+      WHERE Usuario.id_empresa IS NULL AND Alquiler.estado = 1
       GROUP BY Alquiler.id_alquiler;
     `;
     return new Promise((resolve, reject) => {
@@ -78,7 +78,7 @@ const Alquiler = {
       JOIN Usuario ON Alquiler.id_usuario = Usuario.id_usuario
       LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
-      WHERE Alquiler.id_alquiler = ?
+      WHERE Alquiler.id_alquiler = ? AND Alquiler.estado = 1
       GROUP BY Alquiler.id_alquiler;
     `;
 
@@ -110,6 +110,7 @@ const Alquiler = {
     LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
     LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
     LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
+    WHERE Alquiler.estado = 1
     GROUP BY Alquiler.id_alquiler;
   `;
   return new Promise((resolve, reject) => {
@@ -187,7 +188,7 @@ crearAlquiler: (data, imagenes) => {
       LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
       LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
       LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
-      WHERE Usuario.id_usuario = ?
+      WHERE Usuario.id_usuario = ? AND Alquiler.estado = 1
       GROUP BY Alquiler.id_alquiler;
     `;
 
@@ -198,6 +199,17 @@ crearAlquiler: (data, imagenes) => {
       });
     });
   },
+  desactivarAlquiler: (id) => {
+  const sql = `UPDATE Alquiler SET estado = 0 WHERE id_alquiler = ?`;
+
+  return new Promise((resolve, reject) => {
+    db.query(sql, [id], (err, result) => {
+      if (err) reject(err);
+      else resolve({ affectedRows: result.affectedRows });
+    });
+  });
+  }
+
 };
 
 module.exports = Alquiler;
