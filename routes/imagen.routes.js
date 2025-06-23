@@ -1,32 +1,29 @@
 const express = require('express');
-const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const db = require('../config/db');
+const router = express.Router();
 
-const carpetasValidas = ['casas', 'alquileres', 'departamentos', 'terrenos'];
+router.delete('/imagencasa/:nombreArchivo', (req, res) => {
+  const nombreArchivo = req.params.nombreArchivo;
+const subdirectorio = 'casas';
 
-router.delete('/:tipo/:nombreArchivo', (req, res) => {
-  const { tipo, nombreArchivo } = req.params;
+const rutaCompleta = `/imagenes/${subdirectorio}/${nombreArchivo}`;
+const sql = 'DELETE FROM ImagenCasa WHERE url_imagen = ?';
 
-  if (!carpetasValidas.includes(tipo)) {
-    return res.status(400).json({ mensaje: 'Carpeta no válida' });
+db.query(sql, [rutaCompleta], (err, resultado) => {
+  if (err) {
+    console.error('Error al eliminar de la base de datos:', err);
+    return res.status(500).json({ mensaje: 'Error al eliminar de la base de datos', error: err });
   }
 
-  const ruta = path.join(__dirname, '..', 'public', 'imagenes', tipo, nombreArchivo);
+  if (resultado.affectedRows === 0) {
+    return res.json({ mensaje: 'Imagen eliminada del servidor, pero no estaba registrada en la base de datos' });
+  }
 
-  fs.access(ruta, fs.constants.F_OK, (err) => {
-    if (err) {
-      return res.status(404).json({ mensaje: 'Imagen no encontrada' });
-    }
+  return res.json({ mensaje: 'Imagen eliminada correctamente' });
+});
 
-    fs.unlink(ruta, (err) => {
-      if (err) {
-        return res.status(500).json({ mensaje: 'Error al eliminar la imagen' });
-      }
-
-      res.status(200).json({ mensaje: 'Imagen eliminada correctamente' });
-    });
-  });
 });
 
 module.exports = router;

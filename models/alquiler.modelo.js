@@ -208,7 +208,62 @@ crearAlquiler: (data, imagenes) => {
       else resolve({ affectedRows: result.affectedRows });
     });
   });
-  }
+  },
+
+  actualizarAlquiler: (idAlquiler, data, imagenes) => {
+  return new Promise((resolve, reject) => {
+    const {
+      titulo,
+      descripcion,
+      precio_mensual,
+      enlace_ubicacion,
+      amoblado,
+      tiempo_minimo_meses,
+      incluye_servicios,
+      id_ciudad,
+      estado
+    } = data;
+
+    const sqlUpdate = `
+      UPDATE Alquiler SET
+        titulo = ?,
+        descripcion = ?,
+        precio_mensual = ?,
+        enlace_ubicacion = ?,
+        amoblado = ?,
+        tiempo_minimo_meses = ?,
+        incluye_servicios = ?,
+        id_ciudad = ?,
+        estado = ?
+      WHERE id_alquiler = ?
+    `;
+
+    db.query(sqlUpdate, [
+      titulo, descripcion, precio_mensual, enlace_ubicacion,
+      amoblado, tiempo_minimo_meses, incluye_servicios, id_ciudad, estado || 1, idAlquiler
+    ], (err, result) => {
+      if (err) return reject(err);
+
+      if (!imagenes || imagenes.length === 0) {
+        return resolve({ message: 'alquiler actualizada sin cambiar imágenes' });
+      }
+
+      const sqlDeleteImgs = `DELETE FROM ImagenAlquiler WHERE id_alquiler = ?`;
+
+      db.query(sqlDeleteImgs, [idAlquiler], (err) => {
+        if (err) return reject(err);
+
+        const sqlInsertImgs = `INSERT INTO ImagenAlquiler (id_alquiler, url_imagen) VALUES ?`;
+        const valores = imagenes.map(img => [idAlquiler, `/imagenes/alquileres/${img.filename}`]);
+
+        db.query(sqlInsertImgs, [valores], (err) => {
+          if (err) return reject(err);
+          resolve({ message: 'alquiler actualizada con nuevas imágenes' });
+        });
+      });
+    });
+  });
+},
 
 };
 

@@ -218,8 +218,22 @@ const desactivarTerreno = async (req, res) => {
   }
 };
 
+const actualizarTerreno = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const imagenes = req.files;
+
+    const resultado = await Terreno.actualizarTerreno(id, data, imagenes);
+    res.json({ message: resultado.message });
+  } catch (error) {
+    console.error('Error al actualizar terreno:', error);
+    res.status(500).json({ error: 'Error al actualizar terreno' });
+  }
+};
+
 
 module.exports = {
-  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario,desactivarTerreno
+  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario,desactivarTerreno,actualizarTerreno
 };
 

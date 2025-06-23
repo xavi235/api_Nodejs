@@ -229,7 +229,21 @@ const desactivarDepartamento = async (req, res) => {
   }
 };
 
+const actualizarDepartamento = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const imagenes = req.files;
+
+    const resultado = await Departamento.actualizarDepartamento(id, data, imagenes);
+    res.json({ message: resultado.message });
+  } catch (error) {
+    console.error('Error al actualizar departamento:', error);
+    res.status(500).json({ error: 'Error al actualizar Departamento' });
+  }
+};
+
 
 module.exports = {
-  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento,getDepartamentosPorUsuario,desactivarDepartamento
+  getDepartamentosPorEmpresaYCiudad ,getDepartamentosDeUsuariosIndependientes,getDepartamentoPorId,getTodosLosDepartamentos,crearDepartamento,getDepartamentosPorUsuario,desactivarDepartamento,actualizarDepartamento
 };

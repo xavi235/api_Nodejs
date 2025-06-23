@@ -195,6 +195,7 @@ crearDepartamento: (data, imagenes) => {
     });
   });
 },
+
 desactivarDepartamento: (id) => {
   const sql = `UPDATE Departamento SET estado = 0 WHERE id_departamento = ?`;
 
@@ -204,7 +205,62 @@ desactivarDepartamento: (id) => {
       else resolve({ affectedRows: result.affectedRows });
     });
   });
-}
+},
+actualizarDepartamento: (idDepartamento, data, imagenes) => {
+  return new Promise((resolve, reject) => {
+    const {
+      titulo,
+      descripcion,
+      precio,
+      enlace_ubicacion,
+      habitaciones,
+      banos,
+      piso,
+      id_ciudad,
+      estado
+    } = data;
+
+    const sqlUpdate = `
+      UPDATE Departamento SET
+        titulo = ?,
+        descripcion = ?,
+        precio = ?,
+        enlace_ubicacion = ?,
+        habitaciones = ?,
+        banos = ?,
+        piso = ?,
+        id_ciudad = ?,
+        estado = ?
+      WHERE id_departamento = ?
+    `;
+
+    db.query(sqlUpdate, [
+      titulo, descripcion, precio, enlace_ubicacion,
+      habitaciones, banos, piso, id_ciudad, estado || 1, idDepartamento
+    ], (err, result) => {
+      if (err) return reject(err);
+
+      if (!imagenes || imagenes.length === 0) {
+        return resolve({ message: 'departamento actualizada sin cambiar imágenes' });
+      }
+
+      const sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
+
+      db.query(sqlDeleteImgs, [idDepartamento], (err) => {
+        if (err) return reject(err);
+
+        const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
+        const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
+
+        db.query(sqlInsertImgs, [valores], (err) => {
+          if (err) return reject(err);
+          resolve({ message: 'Departamento actualizado con nuevas imágenes' });
+        });
+      });
+    });
+  });
+},
+
 
 };
 

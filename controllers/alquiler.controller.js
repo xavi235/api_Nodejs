@@ -227,7 +227,22 @@ const desactivarAlquiler = async (req, res) => {
   }
 };
 
+const actualizarAlquiler = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const imagenes = req.files;
+
+    const resultado = await Alquiler.actualizarAlquiler(id, data, imagenes);
+    res.json({ message: resultado.message });
+  } catch (error) {
+    console.error('Error al actualizar Alquiler:', error);
+    res.status(500).json({ error: 'Error al actualizar Alquiler' });
+  }
+};
+
+
 module.exports = {
-  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler,getAlquileresPorUsuario,desactivarAlquiler
+  getAlquileresPorEmpresaYCiudad,getAlquileresDeUsuariosIndependientes,getAlquilerPorId,getTodosLosAlquileres,crearAlquiler,getAlquileresPorUsuario,desactivarAlquiler,actualizarAlquiler
 };
 

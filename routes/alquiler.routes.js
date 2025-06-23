@@ -12,5 +12,6 @@ router.get('/', alquilerController.getTodosLosAlquileres);
 router.post('/', upload, alquilerController.crearAlquiler);
 router.get('/usuario/:idUsuario', alquilerController.getAlquileresPorUsuario);
 router.delete('/:id', alquilerController.desactivarAlquiler);
+router.put('/:id', upload, alquilerController.actualizarAlquiler);
 
 module.exports = router;

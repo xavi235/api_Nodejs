@@ -14,6 +14,8 @@ const casaRoutes = require('./routes/casa.routes');
 const alquilerRoutes = require('./routes/alquiler.routes');
 const departamentoRoutes = require('./routes/departamento.routes');
 const terrenoRoutes = require('./routes/terreno.routes');
+//const imagenRoutes = require('./routes/imagen.routes');
+app.use('/api/imagenes', imagenRoutes);
 
 app.use(express.json());
 
@@ -24,7 +26,8 @@ app.use('/api/casas', casaRoutes);
 app.use('/api/alquileres', alquilerRoutes);
 app.use('/api/departamentos', departamentoRoutes);
 app.use('/api/terrenos', terrenoRoutes);
-app.use('/api/imagenes', imagenRoutes);
+//app.use('/api/imagenes', imagenRoutes);
+
 
 const PORT = 3000;
 app.listen(PORT, '0.0.0.0', () => {

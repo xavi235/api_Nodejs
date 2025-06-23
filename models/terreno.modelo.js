@@ -203,7 +203,60 @@ desactivarTerreno: (id) => {
       else resolve({ affectedRows: result.affectedRows });
     });
   });
-}
+},
+
+actualizarTerreno: (idTerreno, data, imagenes) => {
+  return new Promise((resolve, reject) => {
+    const {
+      titulo,
+      descripcion,
+      precio,
+      enlace_ubicacion,
+      tamano,
+      servicios_basicos,
+      id_ciudad,
+      estado
+    } = data;
+
+    const sqlUpdate = `
+      UPDATE Terreno SET
+        titulo = ?,
+        descripcion = ?,
+        precio = ?,
+        enlace_ubicacion = ?,
+        tamano = ?,
+        servicios_basicos = ?,
+        id_ciudad = ?,
+        estado = ?
+      WHERE id_terreno = ?
+    `;
+
+    db.query(sqlUpdate, [
+      titulo, descripcion, precio, enlace_ubicacion,
+      tamano, servicios_basicos, id_ciudad, estado || 1, idTerreno
+    ], (err, result) => {
+      if (err) return reject(err);
+
+      if (!imagenes || imagenes.length === 0) {
+        return resolve({ message: 'Terreno actualizada sin cambiar imágenes' });
+      }
+
+      const sqlDeleteImgs = `DELETE FROM ImagenTerreno WHERE id_terreno = ?`;
+
+      db.query(sqlDeleteImgs, [idTerreno], (err) => {
+        if (err) return reject(err);
+
+        const sqlInsertImgs = `INSERT INTO ImagenTerreno (id_terreno, url_imagen) VALUES ?`;
+        const valores = imagenes.map(img => [idTerreno, `/imagenes/terrenos/${img.filename}`]);
+        db.query(sqlInsertImgs, [valores], (err) => {
+          if (err) return reject(err);
+          resolve({ message: 'Terreno actualizada con nuevas imágenes' });
+        });
+      });
+    });
+  });
+},
+
 
 };
 
