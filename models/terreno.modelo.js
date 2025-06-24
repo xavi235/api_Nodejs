@@ -63,29 +63,40 @@ const Terreno = {
   },
 
   getTerrenoPorId: (id) => {
-    const sql = `
-      SELECT 
-        Terreno.*,
-        Usuario.nombre_usuario,
-        Usuario.correo,
-        Usuario.contacto,
-        Ciudad.id_ciudad,
-        Ciudad.nombre AS nombre_ciudad,
-        GROUP_CONCAT(ImagenTerreno.url_imagen) AS imagenes
-      FROM Terreno
-      JOIN Usuario ON Terreno.id_usuario = Usuario.id_usuario
-      LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
-      LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
-      WHERE Terreno.id_terreno = ? AND Terreno.estado = 1
-      GROUP BY Terreno.id_terreno;
-    `;
-    return new Promise((resolve, reject) => {
-      db.query(sql, [id], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0]);
-      });
+  const sql = `
+    SELECT 
+      Terreno.id_terreno,
+      Terreno.titulo,
+      Terreno.descripcion,
+      Terreno.precio,
+      Terreno.estado,
+      Terreno.tamano,
+      Terreno.servicios_basicos,
+      Terreno.fecha_publicacion,
+      Terreno.enlace_ubicacion,
+      Terreno.id_usuario,
+      Ciudad.id_ciudad,
+      Ciudad.nombre AS nombre_ciudad,
+      Usuario.nombre_usuario AS nombre_usuario,
+      Usuario.correo,
+      Usuario.contacto,
+      GROUP_CONCAT(ImagenTerreno.url_imagen) AS imagenes
+    FROM Terreno
+    JOIN Usuario ON Terreno.id_usuario = Usuario.id_usuario
+    LEFT JOIN Ciudad ON Terreno.id_ciudad = Ciudad.id_ciudad
+    LEFT JOIN ImagenTerreno ON Terreno.id_terreno = ImagenTerreno.id_terreno
+    WHERE Terreno.id_terreno = ? AND Terreno.estado = 1
+    GROUP BY Terreno.id_terreno;
+  `;
+  
+  return new Promise((resolve, reject) => {
+    db.query(sql, [id], (err, results) => {
+      if (err) reject(err);
+      else resolve(results[0]);
     });
-  },
+  });
+},
+
 
   getTodosLosTerrenos: () => {
   const sql = `

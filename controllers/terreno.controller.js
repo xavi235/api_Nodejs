@@ -11,6 +11,7 @@ const getTerrenosPorEmpresaYCiudad = async (req, res) => {
       descripcion: terreno.descripcion,
       precio: terreno.precio,
       estado: terreno.estado,
+      tamano: terreno.tamano,
       fecha_publicacion: terreno.fecha_publicacion,
       enlace_ubicacion: terreno.enlace_ubicacion,
       imagenes: terreno.imagenes ? terreno.imagenes.split(',') : [],
@@ -49,9 +50,9 @@ const getTerrenosDeUsuariosIndependientes = async (req, res) => {
       descripcion: item.descripcion,
       precio: item.precio,
       estado: item.estado,
+      tamano: item.tamano,
       fecha_publicacion: item.fecha_publicacion,
       enlace_ubicacion: item.enlace_ubicacion,
-      superficie: item.superficie,
       imagenes: item.imagenes ? item.imagenes.split(',') : [],
       usuario: {
         id_usuario: item.id_usuario,
@@ -89,9 +90,10 @@ const getTerrenoPorId = async (req, res) => {
       descripcion: terreno.descripcion,
       precio: terreno.precio,
       estado: terreno.estado,
+      tamano: terreno.tamano,
+      servicios_basicos:terreno.servicios_basicos,
       fecha_publicacion: terreno.fecha_publicacion,
       enlace_ubicacion: terreno.enlace_ubicacion,
-      superficie: terreno.superficie,
       imagenes: terreno.imagenes ? terreno.imagenes.split(',') : [],
       usuario: {
         id_usuario: terreno.id_usuario,
@@ -120,9 +122,10 @@ const getTodosLosTerrenos = async (req, res) => {
       descripcion: t.descripcion,
       precio: t.precio,
       estado: t.estado,
+      tamano: t.tamano,
+      servicios: t.servicios_basicos,
       fecha_publicacion: t.fecha_publicacion,
       enlace_ubicacion: t.enlace_ubicacion,
-      superficie: t.superficie,
       imagenes: t.imagenes ? t.imagenes.split(',') : [],
       usuario: {
         id_usuario: t.id_usuario,
@@ -172,9 +175,9 @@ const getTerrenosPorUsuario = async (req, res) => {
       descripcion: t.descripcion,
       precio: t.precio,
       estado: t.estado,
+      tamano: t.tamano,
       fecha_publicacion: t.fecha_publicacion,
       enlace_ubicacion: t.enlace_ubicacion,
-      superficie: t.superficie,
       imagenes: t.imagenes ? t.imagenes.split(',') : [],
       usuario: {
         id_usuario: t.id_usuario,
@@ -232,8 +235,13 @@ const actualizarTerreno = async (req, res) => {
   }
 };
 
-
 module.exports = {
-  getTerrenosPorEmpresaYCiudad, getTerrenosDeUsuariosIndependientes,getTerrenoPorId,getTodosLosTerrenos,crearTerreno,getTerrenosPorUsuario,desactivarTerreno,actualizarTerreno
+  getTerrenosPorEmpresaYCiudad,
+  getTerrenosDeUsuariosIndependientes,
+  getTerrenoPorId,
+  getTodosLosTerrenos,
+  crearTerreno,
+  getTerrenosPorUsuario,
+  desactivarTerreno,
+  actualizarTerreno
 };
-
