@@ -1,9 +1,8 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 
-
 const Usuario = {
-  getTodosLosUsuarios: () => {
+  getTodosLosUsuarios: async () => {
     const sql = `
       SELECT 
         u.id_usuario,
@@ -19,16 +18,11 @@ const Usuario = {
       LEFT JOIN Rol r ON u.id_rol = r.id_rol
       LEFT JOIN Empresa e ON u.id_empresa = e.id_empresa
     `;
-
-    return new Promise((resolve, reject) => {
-      db.query(sql, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [rows] = await db.query(sql);
+    return rows;
   },
 
-  getUsuariosPorCiudadConDetalles: (idCiudad) => {
+  getUsuariosPorCiudadConDetalles: async (idCiudad) => {
     const sql = `
       SELECT 
         u.id_usuario,
@@ -51,13 +45,8 @@ const Usuario = {
       JOIN Rol r ON u.id_rol = r.id_rol
       WHERE ec.id_ciudad = ?
     `;
-
-    return new Promise((resolve, reject) => {
-      db.query(sql, [idCiudad], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [rows] = await db.query(sql, [idCiudad]);
+    return rows;
   },
 
   crearUsuario: async (data) => {
@@ -71,49 +60,37 @@ const Usuario = {
       estado_usuario
     } = data;
 
-    try {
-      const saltRounds = 10;
-      const hash = await bcrypt.hash(contraseña, saltRounds);
+    const saltRounds = 10;
+    const hash = await bcrypt.hash(contraseña, saltRounds);
 
-      const sql = `
-        INSERT INTO Usuario (
-          nombre_usuario, correo, contraseña, contacto,
-          id_rol, id_empresa, estado_usuario
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `;
+    const sql = `
+      INSERT INTO Usuario (
+        nombre_usuario, correo, contraseña, contacto,
+        id_rol, id_empresa, estado_usuario
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
 
-      return new Promise((resolve, reject) => {
-        db.query(sql, [
-          nombre_usuario, correo, hash, contacto,
-          id_rol, id_empresa, estado_usuario || 1 // por defecto activo
-        ], (err, result) => {
-          if (err) reject(err);
-          else resolve({ id_usuario: result.insertId });
-        });
-      });
-    } catch (err) {
-      throw err;
-    }
+    const [result] = await db.query(sql, [
+      nombre_usuario, correo, hash, contacto,
+      id_rol, id_empresa, estado_usuario || 1
+    ]);
+
+    return { id_usuario: result.insertId };
   },
 
-  loginUsuario: (correo, contraseña) => {
-    return new Promise((resolve, reject) => {
-      const sql = `SELECT * FROM Usuario WHERE correo = ?`;
-      db.query(sql, [correo], (err, results) => {
-        if (err) return reject(err);
-        if (results.length === 0) return resolve(null); // Usuario no encontrado
+  loginUsuario: async (correo, contraseña) => {
+    const sql = `SELECT * FROM Usuario WHERE correo = ?`;
+    const [results] = await db.query(sql, [correo]);
 
-        const usuario = results[0];
+    if (results.length === 0) return null; // Usuario no encontrado
 
-        bcrypt.compare(contraseña, usuario.contraseña, (err, match) => {
-          if (err) return reject(err);
-          if (!match) return resolve(null);
+    const usuario = results[0];
+    const match = await bcrypt.compare(contraseña, usuario.contraseña);
 
-          delete usuario.contraseña;
-          resolve(usuario);
-        });
-      });
-    });
+    if (!match) return null;
+
+    delete usuario.contraseña;
+    return usuario;
   }
 };
 
