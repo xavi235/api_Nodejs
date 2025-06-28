@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 const getCiudades = async (req, res) => {
   try {
-    const [rows] = await db.promise().query('SELECT * FROM Ciudad');
+    const [rows] = await db.query('SELECT * FROM Ciudad');
     res.json(rows);
   } catch (err) {
     console.error('Error al obtener ciudades:', err);
