@@ -206,6 +206,7 @@ desactivarDepartamento: (id) => {
     });
   });
 },
+
 actualizarDepartamento: (idDepartamento, data, imagenes) => {
   return new Promise((resolve, reject) => {
     const {
@@ -217,8 +218,14 @@ actualizarDepartamento: (idDepartamento, data, imagenes) => {
       banos,
       piso,
       id_ciudad,
-      estado
+      estado,
+      imagenes_existentes // Nuevo campo para imágenes a conservar
     } = data;
+
+    // Parsear imágenes existentes (vienen como JSON desde Flutter)
+    const imagenesAConservar = typeof imagenes_existentes === 'string' 
+      ? JSON.parse(imagenes_existentes) 
+      : imagenes_existentes || [];
 
     const sqlUpdate = `
       UPDATE Departamento SET
@@ -237,29 +244,38 @@ actualizarDepartamento: (idDepartamento, data, imagenes) => {
     db.query(sqlUpdate, [
       titulo, descripcion, precio, enlace_ubicacion,
       habitaciones, banos, piso, id_ciudad, estado || 1, idDepartamento
-    ], (err, result) => {
+    ], (err) => {
       if (err) return reject(err);
 
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'departamento actualizada sin cambiar imágenes' });
+      // 1. Eliminar solo imágenes que NO están en `imagenesAConservar`
+      let sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
+      let deleteParams = [idDepartamento];
+
+      if (imagenesAConservar.length > 0) {
+        const placeholders = imagenesAConservar.map(() => '?').join(',');
+        sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+        deleteParams = deleteParams.concat(imagenesAConservar);
       }
 
-      const sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
-
-      db.query(sqlDeleteImgs, [idDepartamento], (err) => {
+      db.query(sqlDeleteImgs, deleteParams, (err) => {
         if (err) return reject(err);
 
-        const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
+        // 2. Insertar nuevas imágenes (si hay)
+        if (imagenes && imagenes.length > 0) {
+          const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
+          const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
 
-        db.query(sqlInsertImgs, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ message: 'Departamento actualizado con nuevas imágenes' });
-        });
+          db.query(sqlInsertImgs, [valores], (err) => {
+            if (err) return reject(err);
+            resolve({ message: 'Departamento actualizado con imágenes modificadas' });
+          });
+        } else {
+          resolve({ message: 'Departamento actualizado (imágenes existentes conservadas)' });
+        }
       });
     });
   });
-},
+}
 
 
 };

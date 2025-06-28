@@ -210,7 +210,7 @@ crearAlquiler: (data, imagenes) => {
   });
   },
 
-  actualizarAlquiler: (idAlquiler, data, imagenes) => {
+ actualizarAlquiler: (idAlquiler, data, imagenes) => {
   return new Promise((resolve, reject) => {
     const {
       titulo,
@@ -221,8 +221,14 @@ crearAlquiler: (data, imagenes) => {
       tiempo_minimo_meses,
       incluye_servicios,
       id_ciudad,
-      estado
+      estado,
+      imagenes_existentes
     } = data;
+
+    // Convertir imagenes_existentes a array si viene como string (JSON)
+    const imagenesAConservar = typeof imagenes_existentes === 'string' 
+      ? JSON.parse(imagenes_existentes) 
+      : imagenes_existentes || [];
 
     const sqlUpdate = `
       UPDATE Alquiler SET
@@ -241,30 +247,39 @@ crearAlquiler: (data, imagenes) => {
     db.query(sqlUpdate, [
       titulo, descripcion, precio_mensual, enlace_ubicacion,
       amoblado, tiempo_minimo_meses, incluye_servicios, id_ciudad, estado || 1, idAlquiler
-    ], (err, result) => {
+    ], (err) => {
       if (err) return reject(err);
 
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'alquiler actualizada sin cambiar imágenes' });
+      // 1. Eliminar solo imágenes que NO están en la lista
+      let sqlDeleteImgs = `DELETE FROM ImagenAlquiler WHERE id_alquiler = ?`;
+      let deleteParams = [idAlquiler];
+
+      if (imagenesAConservar.length > 0) {
+        // Crear placeholders para cada imagen (?, ?, ?...)
+        const placeholders = imagenesAConservar.map(() => '?').join(',');
+        sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+        deleteParams = deleteParams.concat(imagenesAConservar);
       }
 
-      const sqlDeleteImgs = `DELETE FROM ImagenAlquiler WHERE id_alquiler = ?`;
-
-      db.query(sqlDeleteImgs, [idAlquiler], (err) => {
+      db.query(sqlDeleteImgs, deleteParams, (err) => {
         if (err) return reject(err);
 
-        const sqlInsertImgs = `INSERT INTO ImagenAlquiler (id_alquiler, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idAlquiler, `/imagenes/alquileres/${img.filename}`]);
+        // 2. Insertar nuevas imágenes (si hay)
+        if (imagenes && imagenes.length > 0) {
+          const sqlInsertImgs = `INSERT INTO ImagenAlquiler (id_alquiler, url_imagen) VALUES ?`;
+          const valores = imagenes.map(img => [idAlquiler, `/imagenes/alquileres/${img.filename}`]);
 
-        db.query(sqlInsertImgs, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ message: 'alquiler actualizada con nuevas imágenes' });
-        });
+          db.query(sqlInsertImgs, [valores], (err) => {
+            if (err) return reject(err);
+            resolve({ message: 'Alquiler actualizado con imágenes modificadas' });
+          });
+        } else {
+          resolve({ message: 'Alquiler actualizado (imágenes existentes conservadas)' });
+        }
       });
     });
   });
-},
-
+}
 };
 
 module.exports = Alquiler;
