@@ -46,7 +46,8 @@ const Usuario = {
       WHERE ec.id_ciudad = ?
     `;
     const [rows] = await db.query(sql, [idCiudad]);
-    return rows;
+    // Elimina la propiedad contraseña antes de devolver los datos
+    return rows.map(({ contraseña, ...rest }) => rest);
   },
 
   crearUsuario: async (data) => {

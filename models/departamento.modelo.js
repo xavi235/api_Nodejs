@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const Departamento = {
-  getDepartamentosPorEmpresaYCiudad: (idEmpresa, idCiudad) => {
+  getDepartamentosPorEmpresaYCiudad: async (idEmpresa, idCiudad) => {
     const sql = `
       SELECT 
         Departamento.*,
@@ -23,15 +23,11 @@ const Departamento = {
       WHERE Usuario.id_empresa = ? AND Departamento.id_ciudad = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    return new Promise((resolve, reject) => {
-      db.query(sql, [idEmpresa, idCiudad], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [results] = await db.query(sql, [idEmpresa, idCiudad]);
+    return results;
   },
 
-  getDepartamentosDeUsuariosIndependientes: () => {
+  getDepartamentosDeUsuariosIndependientes: async () => {
     const sql = `
       SELECT 
         Departamento.*,
@@ -54,15 +50,11 @@ const Departamento = {
       WHERE Usuario.id_empresa IS NULL AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    return new Promise((resolve, reject) => {
-      db.query(sql, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [results] = await db.query(sql);
+    return results;
   },
 
-  getDepartamentoPorId: (id) => {
+  getDepartamentoPorId: async (id) => {
     const sql = `
       SELECT 
         Departamento.*,
@@ -79,135 +71,114 @@ const Departamento = {
       WHERE Departamento.id_departamento = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    return new Promise((resolve, reject) => {
-      db.query(sql, [id], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0]);
-      });
-    });
+    const [results] = await db.query(sql, [id]);
+    return results[0];
   },
 
-  getTodosLosDepartamentos: () => {
-  const sql = `
-    SELECT 
-      Departamento.*,
-      Usuario.nombre_usuario,
-      Usuario.correo,
-      Usuario.contacto,
-      Ciudad.nombre AS nombre_ciudad,
-      Empresa.id_empresa,
-      Empresa.nombre AS nombre_empresa,
-      Empresa.descripcion AS descripcion_empresa,
-      Empresa.contacto AS telefono_empresa,
-      Empresa.correo AS correo_empresa,
-      GROUP_CONCAT(ImagenDepartamento.url_imagen) AS imagenes
-    FROM Departamento
-    JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
-    LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
-    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
-    LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-    WHERE Departamento.estado = 1
-    GROUP BY Departamento.id_departamento;
-  `;
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, results) => {
-      if (err) reject(err);
-      else resolve(results);
-    });
-  });
-},
+  getTodosLosDepartamentos: async () => {
+    const sql = `
+      SELECT 
+        Departamento.*,
+        Usuario.nombre_usuario,
+        Usuario.correo,
+        Usuario.contacto,
+        Ciudad.nombre AS nombre_ciudad,
+        Empresa.id_empresa,
+        Empresa.nombre AS nombre_empresa,
+        Empresa.descripcion AS descripcion_empresa,
+        Empresa.contacto AS telefono_empresa,
+        Empresa.correo AS correo_empresa,
+        GROUP_CONCAT(ImagenDepartamento.url_imagen) AS imagenes
+      FROM Departamento
+      JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
+      LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
+      LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+      LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
+      WHERE Departamento.estado = 1
+      GROUP BY Departamento.id_departamento;
+    `;
+    const [results] = await db.query(sql);
+    return results;
+  },
 
-crearDepartamento: (data, imagenes) => {
-    return new Promise((resolve, reject) => {
-      const {
-        titulo,
-        descripcion,
-        precio,
-        enlace_ubicacion,
-        habitaciones,
-        banos,
-        piso,
-        id_usuario,
-        id_ciudad
-      } = data;
+  crearDepartamento: async (data, imagenes) => {
+    const {
+      titulo,
+      descripcion,
+      precio,
+      enlace_ubicacion,
+      habitaciones,
+      banos,
+      piso,
+      id_usuario,
+      id_ciudad
+    } = data;
 
-      const sql = `
-        INSERT INTO Departamento (
-          titulo, descripcion, precio, fecha_publicacion,
-          enlace_ubicacion, habitaciones, banos, piso,
-          id_usuario, id_ciudad
-        ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?)
-      `;
-
-      db.query(sql, [
-        titulo, descripcion, precio,
+    const sql = `
+      INSERT INTO Departamento (
+        titulo, descripcion, precio, fecha_publicacion,
         enlace_ubicacion, habitaciones, banos, piso,
         id_usuario, id_ciudad
-      ], (err, result) => {
-        if (err) return reject(err);
+      ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?)
+    `;
 
-        const id_departamento = result.insertId;
+    const [result] = await db.query(sql, [
+      titulo, descripcion, precio,
+      enlace_ubicacion, habitaciones, banos, piso,
+      id_usuario, id_ciudad
+    ]);
 
-        if (!imagenes || imagenes.length === 0) return resolve({ id_departamento });
+    const id_departamento = result.insertId;
 
-        const sqlImagenes = `
-          INSERT INTO ImagenDepartamento (id_departamento, url_imagen)
-          VALUES ?
-        `;
+    if (!imagenes || imagenes.length === 0) return { id_departamento };
 
-        const valores = imagenes.map(img => [id_departamento, `/imagenes/departamentos/${img.filename}`]);
+    const sqlImagenes = `
+      INSERT INTO ImagenDepartamento (id_departamento, url_imagen)
+      VALUES ?
+    `;
 
-        db.query(sqlImagenes, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ id_departamento });
-        });
-      });
-    });
+    const valores = imagenes.map(img => [id_departamento, `/imagenes/departamentos/${img.filename}`]);
+
+    await db.query(sqlImagenes, [valores]);
+
+    return { id_departamento };
   },
-  getDepartamentosPorUsuario: (idUsuario) => {
-  const sql = `
-    SELECT 
-      Departamento.*,
-      Usuario.nombre_usuario,
-      Usuario.correo,
-      Usuario.contacto,
-      Ciudad.id_ciudad,
-      Ciudad.nombre AS nombre_ciudad,
-      Empresa.id_empresa,
-      Empresa.nombre AS nombre_empresa,
-      Empresa.descripcion AS descripcion_empresa,
-      Empresa.contacto AS telefono_empresa,
-      Empresa.correo AS correo_empresa,
-      GROUP_CONCAT(ImagenDepartamento.url_imagen) AS imagenes
-    FROM Departamento
-    JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
-    LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
-    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
-    LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
-    WHERE Usuario.id_usuario = ? AND Departamento.estado = 1
-    GROUP BY Departamento.id_departamento;
-  `;
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, [idUsuario], (err, results) => {
-      if (err) reject(err);
-      else resolve(results);
-    });
-  });
-},
+  getDepartamentosPorUsuario: async (idUsuario) => {
+    const sql = `
+      SELECT 
+        Departamento.*,
+        Usuario.nombre_usuario,
+        Usuario.correo,
+        Usuario.contacto,
+        Ciudad.id_ciudad,
+        Ciudad.nombre AS nombre_ciudad,
+        Empresa.id_empresa,
+        Empresa.nombre AS nombre_empresa,
+        Empresa.descripcion AS descripcion_empresa,
+        Empresa.contacto AS telefono_empresa,
+        Empresa.correo AS correo_empresa,
+        GROUP_CONCAT(ImagenDepartamento.url_imagen) AS imagenes
+      FROM Departamento
+      JOIN Usuario ON Departamento.id_usuario = Usuario.id_usuario
+      LEFT JOIN Ciudad ON Departamento.id_ciudad = Ciudad.id_ciudad
+      LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+      LEFT JOIN ImagenDepartamento ON Departamento.id_departamento = ImagenDepartamento.id_departamento
+      WHERE Usuario.id_usuario = ? AND Departamento.estado = 1
+      GROUP BY Departamento.id_departamento;
+    `;
 
-desactivarDepartamento: (id) => {
-  const sql = `UPDATE Departamento SET estado = 0 WHERE id_departamento = ?`;
+    const [results] = await db.query(sql, [idUsuario]);
+    return results;
+  },
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, [id], (err, result) => {
-      if (err) reject(err);
-      else resolve({ affectedRows: result.affectedRows });
-    });
-  });
-},
-actualizarDepartamento: (idDepartamento, data, imagenes) => {
-  return new Promise((resolve, reject) => {
+  desactivarDepartamento: async (id) => {
+    const sql = `UPDATE Departamento SET estado = 0 WHERE id_departamento = ?`;
+    const [result] = await db.query(sql, [id]);
+    return { affectedRows: result.affectedRows };
+  },
+
+  actualizarDepartamento: async (idDepartamento, data, imagenes) => {
     const {
       titulo,
       descripcion,
@@ -234,34 +205,24 @@ actualizarDepartamento: (idDepartamento, data, imagenes) => {
       WHERE id_departamento = ?
     `;
 
-    db.query(sqlUpdate, [
+    await db.query(sqlUpdate, [
       titulo, descripcion, precio, enlace_ubicacion,
       habitaciones, banos, piso, id_ciudad, estado || 1, idDepartamento
-    ], (err, result) => {
-      if (err) return reject(err);
+    ]);
 
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'departamento actualizada sin cambiar imágenes' });
-      }
+    if (!imagenes || imagenes.length === 0) {
+      return { message: 'departamento actualizada sin cambiar imágenes' };
+    }
 
-      const sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
+    const sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
+    await db.query(sqlDeleteImgs, [idDepartamento]);
 
-      db.query(sqlDeleteImgs, [idDepartamento], (err) => {
-        if (err) return reject(err);
+    const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
+    const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
+    await db.query(sqlInsertImgs, [valores]);
 
-        const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
-
-        db.query(sqlInsertImgs, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ message: 'Departamento actualizado con nuevas imágenes' });
-        });
-      });
-    });
-  });
-},
-
-
+    return { message: 'Departamento actualizado con nuevas imágenes' };
+  },
 };
 
 module.exports = Departamento;

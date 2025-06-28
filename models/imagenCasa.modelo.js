@@ -1,6 +1,12 @@
 const db = require('../config/db');
 
 module.exports = {
-  getAll: () => db.query('SELECT * FROM ImagenCasa'),
-  getByCasa: (id) => db.query('SELECT * FROM ImagenCasa WHERE id_casa = ?', [id])
+  getAll: async () => {
+    const [results] = await db.query('SELECT * FROM ImagenCasa');
+    return results;
+  },
+  getByCasa: async (id) => {
+    const [results] = await db.query('SELECT * FROM ImagenCasa WHERE id_casa = ?', [id]);
+    return results;
+  }
 };

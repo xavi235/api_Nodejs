@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const Alquiler = {
-  getAlquileresPorEmpresaYCiudad: (idEmpresa, idCiudad) => {
+  getAlquileresPorEmpresaYCiudad: async (idEmpresa, idCiudad) => {
     const sql = `
       SELECT 
         Alquiler.*,
@@ -24,16 +24,11 @@ const Alquiler = {
       GROUP BY Alquiler.id_alquiler;
     `;
 
-
-    return new Promise((resolve, reject) => {
-      db.query(sql, [idEmpresa, idCiudad], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [results] = await db.query(sql, [idEmpresa, idCiudad]);
+    return results;
   },
 
-  getAlquileresDeUsuariosIndependientes: () => {
+  getAlquileresDeUsuariosIndependientes: async () => {
     const sql = `
       SELECT 
         Alquiler.*,
@@ -56,15 +51,11 @@ const Alquiler = {
       WHERE Usuario.id_empresa IS NULL AND Alquiler.estado = 1
       GROUP BY Alquiler.id_alquiler;
     `;
-    return new Promise((resolve, reject) => {
-      db.query(sql, (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
+    const [results] = await db.query(sql);
+    return results;
   },
 
-  getAlquilerPorId: (id) => {
+  getAlquilerPorId: async (id) => {
     const sql = `
       SELECT 
         Alquiler.*,
@@ -82,93 +73,80 @@ const Alquiler = {
       GROUP BY Alquiler.id_alquiler;
     `;
 
-    return new Promise((resolve, reject) => {
-      db.query(sql, [id], (err, results) => {
-        if (err) reject(err);
-        else resolve(results[0]);
-      });
-    });
+    const [results] = await db.query(sql, [id]);
+    return results[0];
   },
- 
 
-  getTodosLosAlquileres: () => {
-  const sql = `
-    SELECT 
-      Alquiler.*,
-      Usuario.nombre_usuario,
-      Usuario.correo,
-      Usuario.contacto,
-      Ciudad.nombre AS nombre_ciudad,
-      Empresa.id_empresa,
-      Empresa.nombre AS nombre_empresa,
-      Empresa.descripcion AS descripcion_empresa,
-      Empresa.contacto AS telefono_empresa,
-      Empresa.correo AS correo_empresa,
-      GROUP_CONCAT(ImagenAlquiler.url_imagen) AS imagenes
-    FROM Alquiler
-    JOIN Usuario ON Alquiler.id_usuario = Usuario.id_usuario
-    LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
-    LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
-    LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
-    WHERE Alquiler.estado = 1
-    GROUP BY Alquiler.id_alquiler;
-  `;
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, results) => {
-      if (err) reject(err);
-      else resolve(results);
-    });
-  });
-},
+  getTodosLosAlquileres: async () => {
+    const sql = `
+      SELECT 
+        Alquiler.*,
+        Usuario.nombre_usuario,
+        Usuario.correo,
+        Usuario.contacto,
+        Ciudad.nombre AS nombre_ciudad,
+        Empresa.id_empresa,
+        Empresa.nombre AS nombre_empresa,
+        Empresa.descripcion AS descripcion_empresa,
+        Empresa.contacto AS telefono_empresa,
+        Empresa.correo AS correo_empresa,
+        GROUP_CONCAT(ImagenAlquiler.url_imagen) AS imagenes
+      FROM Alquiler
+      JOIN Usuario ON Alquiler.id_usuario = Usuario.id_usuario
+      LEFT JOIN Ciudad ON Alquiler.id_ciudad = Ciudad.id_ciudad
+      LEFT JOIN Empresa ON Usuario.id_empresa = Empresa.id_empresa
+      LEFT JOIN ImagenAlquiler ON Alquiler.id_alquiler = ImagenAlquiler.id_alquiler
+      WHERE Alquiler.estado = 1
+      GROUP BY Alquiler.id_alquiler;
+    `;
+    const [results] = await db.query(sql);
+    return results;
+  },
 
-crearAlquiler: (data, imagenes) => {
-    return new Promise((resolve, reject) => {
-      const {
-        titulo,
-        descripcion,
-        precio_mensual,
-        enlace_ubicacion,
-        amoblado,
-        tiempo_minimo_meses,
-        incluye_servicios,
-        id_usuario,
-        id_ciudad
-      } = data;
+  crearAlquiler: async (data, imagenes) => {
+    const {
+      titulo,
+      descripcion,
+      precio_mensual,
+      enlace_ubicacion,
+      amoblado,
+      tiempo_minimo_meses,
+      incluye_servicios,
+      id_usuario,
+      id_ciudad
+    } = data;
 
-      const sql = `
-        INSERT INTO Alquiler (
-          titulo, descripcion, precio_mensual, fecha_publicacion,
-          enlace_ubicacion, amoblado, tiempo_minimo_meses, incluye_servicios,
-          id_usuario, id_ciudad
-        ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?)
-      `;
-
-      db.query(sql, [
-        titulo, descripcion, precio_mensual,
+    const sql = `
+      INSERT INTO Alquiler (
+        titulo, descripcion, precio_mensual, fecha_publicacion,
         enlace_ubicacion, amoblado, tiempo_minimo_meses, incluye_servicios,
         id_usuario, id_ciudad
-      ], (err, result) => {
-        if (err) return reject(err);
+      ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?)
+    `;
 
-        const id_alquiler = result.insertId;
+    const [result] = await db.query(sql, [
+      titulo, descripcion, precio_mensual,
+      enlace_ubicacion, amoblado, tiempo_minimo_meses, incluye_servicios,
+      id_usuario, id_ciudad
+    ]);
 
-        if (!imagenes || imagenes.length === 0) return resolve({ id_alquiler });
+    const id_alquiler = result.insertId;
 
-        const sqlImagenes = `
-          INSERT INTO ImagenAlquiler (id_alquiler, url_imagen)
-          VALUES ?
-        `;
+    if (!imagenes || imagenes.length === 0) return { id_alquiler };
 
-        const valores = imagenes.map(img => [id_alquiler, `/imagenes/alquileres/${img.filename}`]);
+    const sqlImagenes = `
+      INSERT INTO ImagenAlquiler (id_alquiler, url_imagen)
+      VALUES ?
+    `;
 
-        db.query(sqlImagenes, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ id_alquiler });
-        });
-      });
-    });
+    const valores = imagenes.map(img => [id_alquiler, `/imagenes/alquileres/${img.filename}`]);
+
+    await db.query(sqlImagenes, [valores]);
+
+    return { id_alquiler };
   },
-  getAlquileresPorUsuario: (idUsuario) => {
+
+  getAlquileresPorUsuario: async (idUsuario) => {
     const sql = `
       SELECT 
         Alquiler.*,
@@ -192,26 +170,17 @@ crearAlquiler: (data, imagenes) => {
       GROUP BY Alquiler.id_alquiler;
     `;
 
-    return new Promise((resolve, reject) => {
-      db.query(sql, [idUsuario], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
-  },
-  desactivarAlquiler: (id) => {
-  const sql = `UPDATE Alquiler SET estado = 0 WHERE id_alquiler = ?`;
-
-  return new Promise((resolve, reject) => {
-    db.query(sql, [id], (err, result) => {
-      if (err) reject(err);
-      else resolve({ affectedRows: result.affectedRows });
-    });
-  });
+    const [results] = await db.query(sql, [idUsuario]);
+    return results;
   },
 
-  actualizarAlquiler: (idAlquiler, data, imagenes) => {
-  return new Promise((resolve, reject) => {
+  desactivarAlquiler: async (id) => {
+    const sql = `UPDATE Alquiler SET estado = 0 WHERE id_alquiler = ?`;
+    const [result] = await db.query(sql, [id]);
+    return { affectedRows: result.affectedRows };
+  },
+
+  actualizarAlquiler: async (idAlquiler, data, imagenes) => {
     const {
       titulo,
       descripcion,
@@ -238,33 +207,24 @@ crearAlquiler: (data, imagenes) => {
       WHERE id_alquiler = ?
     `;
 
-    db.query(sqlUpdate, [
+    await db.query(sqlUpdate, [
       titulo, descripcion, precio_mensual, enlace_ubicacion,
       amoblado, tiempo_minimo_meses, incluye_servicios, id_ciudad, estado || 1, idAlquiler
-    ], (err, result) => {
-      if (err) return reject(err);
+    ]);
 
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'alquiler actualizada sin cambiar imágenes' });
-      }
+    if (!imagenes || imagenes.length === 0) {
+      return { message: 'alquiler actualizada sin cambiar imágenes' };
+    }
 
-      const sqlDeleteImgs = `DELETE FROM ImagenAlquiler WHERE id_alquiler = ?`;
+    const sqlDeleteImgs = `DELETE FROM ImagenAlquiler WHERE id_alquiler = ?`;
+    await db.query(sqlDeleteImgs, [idAlquiler]);
 
-      db.query(sqlDeleteImgs, [idAlquiler], (err) => {
-        if (err) return reject(err);
+    const sqlInsertImgs = `INSERT INTO ImagenAlquiler (id_alquiler, url_imagen) VALUES ?`;
+    const valores = imagenes.map(img => [idAlquiler, `/imagenes/alquileres/${img.filename}`]);
+    await db.query(sqlInsertImgs, [valores]);
 
-        const sqlInsertImgs = `INSERT INTO ImagenAlquiler (id_alquiler, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idAlquiler, `/imagenes/alquileres/${img.filename}`]);
-
-        db.query(sqlInsertImgs, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ message: 'alquiler actualizada con nuevas imágenes' });
-        });
-      });
-    });
-  });
-},
-
+    return { message: 'alquiler actualizada con nuevas imágenes' };
+  },
 };
 
 module.exports = Alquiler;
