@@ -210,6 +210,7 @@ desactivarCasa: (id) => {
     });
   });
 },
+
 actualizarCasa: (idCasa, data, imagenes) => {
   return new Promise((resolve, reject) => {
     const {
@@ -222,8 +223,13 @@ actualizarCasa: (idCasa, data, imagenes) => {
       cochera,
       pisos,
       id_ciudad,
-      estado
+      estado,
+      imagenes_existentes // Nuevo campo para imágenes a conservar
     } = data;
+
+    const imagenesAConservar = typeof imagenes_existentes === 'string' 
+      ? JSON.parse(imagenes_existentes) 
+      : imagenes_existentes || [];
 
     const sqlUpdate = `
       UPDATE Casa SET
@@ -243,29 +249,38 @@ actualizarCasa: (idCasa, data, imagenes) => {
     db.query(sqlUpdate, [
       titulo, descripcion, precio, enlace_ubicacion,
       habitaciones, banos, cochera, pisos, id_ciudad, estado || 1, idCasa
-    ], (err, result) => {
+    ], (err) => {
       if (err) return reject(err);
 
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'Casa actualizada sin cambiar imágenes' });
+      // 1. Eliminar solo imágenes que NO están en `imagenesAConservar`
+      let sqlDeleteImgs = `DELETE FROM ImagenCasa WHERE id_casa = ?`;
+      let deleteParams = [idCasa];
+
+      if (imagenesAConservar.length > 0) {
+        const placeholders = imagenesAConservar.map(() => '?').join(',');
+        sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+        deleteParams = deleteParams.concat(imagenesAConservar);
       }
 
-      const sqlDeleteImgs = `DELETE FROM ImagenCasa WHERE id_casa = ?`;
-
-      db.query(sqlDeleteImgs, [idCasa], (err) => {
+      db.query(sqlDeleteImgs, deleteParams, (err) => {
         if (err) return reject(err);
 
-        const sqlInsertImgs = `INSERT INTO ImagenCasa (id_casa, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idCasa, `/imagenes/casas/${img.filename}`]);
+        // 2. Insertar nuevas imágenes (si hay)
+        if (imagenes && imagenes.length > 0) {
+          const sqlInsertImgs = `INSERT INTO ImagenCasa (id_casa, url_imagen) VALUES ?`;
+          const valores = imagenes.map(img => [idCasa, `/imagenes/casas/${img.filename}`]);
 
-        db.query(sqlInsertImgs, [valores], (err) => {
-          if (err) return reject(err);
-          resolve({ message: 'Casa actualizada con nuevas imágenes' });
-        });
+          db.query(sqlInsertImgs, [valores], (err) => {
+            if (err) return reject(err);
+            resolve({ message: 'Casa actualizada con imágenes modificadas' });
+          });
+        } else {
+          resolve({ message: 'Casa actualizada (imágenes existentes conservadas)' });
+        }
       });
     });
   });
-},
+}
 
 
 };

@@ -63,7 +63,7 @@ const Terreno = {
   },
 
   getTerrenoPorId: (id) => {
-  const sql = `
+    const sql = `
     SELECT 
       Terreno.id_terreno,
       Terreno.titulo,
@@ -88,18 +88,18 @@ const Terreno = {
     WHERE Terreno.id_terreno = ? AND Terreno.estado = 1
     GROUP BY Terreno.id_terreno;
   `;
-  
-  return new Promise((resolve, reject) => {
-    db.query(sql, [id], (err, results) => {
-      if (err) reject(err);
-      else resolve(results[0]);
+
+    return new Promise((resolve, reject) => {
+      db.query(sql, [id], (err, results) => {
+        if (err) reject(err);
+        else resolve(results[0]);
+      });
     });
-  });
-},
+  },
 
 
   getTodosLosTerrenos: () => {
-  const sql = `
+    const sql = `
     SELECT 
       Terreno.*,
       Usuario.nombre_usuario,
@@ -120,15 +120,15 @@ const Terreno = {
     WHERE Terreno.estado = 1
     GROUP BY Terreno.id_terreno;
   `;
-  return new Promise((resolve, reject) => {
-    db.query(sql, (err, results) => {
-      if (err) reject(err);
-      else resolve(results);
+    return new Promise((resolve, reject) => {
+      db.query(sql, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
     });
-  });
-},
+  },
 
-crearTerreno: (data, imagenes) => {
+  crearTerreno: (data, imagenes) => {
     return new Promise((resolve, reject) => {
       const {
         titulo,
@@ -136,7 +136,7 @@ crearTerreno: (data, imagenes) => {
         precio,
         enlace_ubicacion,
         tamano,
-        servicios_basicos,              
+        servicios_basicos,
         id_usuario,
         id_ciudad
       } = data;
@@ -175,7 +175,7 @@ crearTerreno: (data, imagenes) => {
     });
   },
   getTerrenosPorUsuario: (idUsuario) => {
-  const sql = `
+    const sql = `
     SELECT 
       Terreno.*,
       Usuario.nombre_usuario,
@@ -197,39 +197,44 @@ crearTerreno: (data, imagenes) => {
     WHERE Usuario.id_usuario = ? AND Terreno.estado = 1
     GROUP BY Terreno.id_terreno;
   `;
-  return new Promise((resolve, reject) => {
-    db.query(sql, [idUsuario], (err, results) => {
-      if (err) reject(err);
-      else resolve(results);
+    return new Promise((resolve, reject) => {
+      db.query(sql, [idUsuario], (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
     });
-  });
-},
+  },
 
-desactivarTerreno: (id) => {
-  const sql = `UPDATE Terreno SET estado = 0 WHERE id_terreno = ?`;
+  desactivarTerreno: (id) => {
+    const sql = `UPDATE Terreno SET estado = 0 WHERE id_terreno = ?`;
 
-  return new Promise((resolve, reject) => {
-    db.query(sql, [id], (err, result) => {
-      if (err) reject(err);
-      else resolve({ affectedRows: result.affectedRows });
+    return new Promise((resolve, reject) => {
+      db.query(sql, [id], (err, result) => {
+        if (err) reject(err);
+        else resolve({ affectedRows: result.affectedRows });
+      });
     });
-  });
-},
+  },
 
-actualizarTerreno: (idTerreno, data, imagenes) => {
-  return new Promise((resolve, reject) => {
-    const {
-      titulo,
-      descripcion,
-      precio,
-      enlace_ubicacion,
-      tamano,
-      servicios_basicos,
-      id_ciudad,
-      estado
-    } = data;
+  actualizarTerreno: (idTerreno, data, imagenes) => {
+    return new Promise((resolve, reject) => {
+      const {
+        titulo,
+        descripcion,
+        precio,
+        enlace_ubicacion,
+        tamano,
+        servicios_basicos,
+        id_ciudad,
+        estado,
+        imagenes_existentes
+      } = data;
 
-    const sqlUpdate = `
+      const imagenesAConservar = typeof imagenes_existentes === 'string'
+        ? JSON.parse(imagenes_existentes)
+        : imagenes_existentes || [];
+
+      const sqlUpdate = `
       UPDATE Terreno SET
         titulo = ?,
         descripcion = ?,
@@ -242,31 +247,39 @@ actualizarTerreno: (idTerreno, data, imagenes) => {
       WHERE id_terreno = ?
     `;
 
-    db.query(sqlUpdate, [
-      titulo, descripcion, precio, enlace_ubicacion,
-      tamano, servicios_basicos, id_ciudad, estado || 1, idTerreno
-    ], (err, result) => {
-      if (err) return reject(err);
-
-      if (!imagenes || imagenes.length === 0) {
-        return resolve({ message: 'Terreno actualizada sin cambiar imágenes' });
-      }
-
-      const sqlDeleteImgs = `DELETE FROM ImagenTerreno WHERE id_terreno = ?`;
-
-      db.query(sqlDeleteImgs, [idTerreno], (err) => {
+      db.query(sqlUpdate, [
+        titulo, descripcion, precio, enlace_ubicacion,
+        tamano, servicios_basicos, id_ciudad, estado || 1, idTerreno
+      ], (err, result) => {
         if (err) return reject(err);
 
-        const sqlInsertImgs = `INSERT INTO ImagenTerreno (id_terreno, url_imagen) VALUES ?`;
-        const valores = imagenes.map(img => [idTerreno, `/imagenes/terrenos/${img.filename}`]);
-        db.query(sqlInsertImgs, [valores], (err) => {
+        let sqlDeleteImgs = `DELETE FROM ImagenTerreno WHERE id_terreno = ?`;
+        let deleteParams = [idTerreno];
+
+        if (imagenesAConservar.length > 0) {
+          const placeholders = imagenesAConservar.map(() => '?').join(',');
+          sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+          deleteParams = deleteParams.concat(imagenesAConservar);
+        }
+
+        db.query(sqlDeleteImgs, deleteParams, (err) => {
           if (err) return reject(err);
-          resolve({ message: 'Terreno actualizada con nuevas imágenes' });
+
+          if (imagenes && imagenes.length > 0) {
+            const sqlInsertImgs = `INSERT INTO ImagenTerreno (id_terreno, url_imagen) VALUES ?`;
+            const valores = imagenes.map(img => [idTerreno, `/imagenes/terrenos/${img.filename}`]);
+
+            db.query(sqlInsertImgs, [valores], (err) => {
+              if (err) return reject(err);
+              resolve({ message: 'Terreno actualizada con nuevas imágenes' });
+            });
+          } else {
+            resolve({ message: 'Terreno actualizado (imagenes existentes conservados)' });
+          }
         });
       });
     });
-  });
-},
+  }
 
 
 };
