@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const Casa = {
-  getCasasPorEmpresaYCiudad: async (idEmpresa, idCiudad) => {
+  async getCasasPorEmpresaYCiudad(idEmpresa, idCiudad) {
     const sql = `
       SELECT 
         Casa.*,
@@ -23,12 +23,11 @@ const Casa = {
       WHERE Usuario.id_empresa = ? AND Casa.id_ciudad = ? AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
-
-    const [results] = await db.query(sql, [idEmpresa, idCiudad]);
+    const [results] = await db.execute(sql, [idEmpresa, idCiudad]);
     return results;
   },
 
-  getCasasDeUsuariosIndependientes: async () => {
+  async getCasasDeUsuariosIndependientes() {
     const sql = `
       SELECT 
         Casa.*,
@@ -51,12 +50,11 @@ const Casa = {
         AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
-
-    const [results] = await db.query(sql);
+    const [results] = await db.execute(sql);
     return results;
   },
 
-  getCasaPorId: async (id) => {
+  async getCasaPorId(id) {
     const sql = `
       SELECT 
         Casa.*,
@@ -74,11 +72,11 @@ const Casa = {
         AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
-    const [results] = await db.query(sql, [id]);
+    const [results] = await db.execute(sql, [id]);
     return results[0];
   },
 
-  getTodasLasCasas: async () => {
+  async getTodasLasCasas() {
     const sql = `
       SELECT 
         Casa.*,
@@ -100,11 +98,11 @@ const Casa = {
       WHERE Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
-    const [results] = await db.query(sql);
+    const [results] = await db.execute(sql);
     return results;
   },
 
-  crearCasa: async (data, imagenes) => {
+  async crearCasa(data, imagenes) {
     const {
       titulo,
       descripcion,
@@ -126,7 +124,7 @@ const Casa = {
       ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const [result] = await db.query(sql, [
+    const [result] = await db.execute(sql, [
       titulo, descripcion, precio,
       enlace_ubicacion, habitaciones, banos, cochera, pisos,
       id_usuario, id_ciudad
@@ -148,7 +146,7 @@ const Casa = {
     return { id_casa };
   },
 
-  getCasasPorUsuario: async (idUsuario) => {
+  async getCasasPorUsuario(idUsuario) {
     const sql = `
       SELECT 
         Casa.*,
@@ -171,18 +169,17 @@ const Casa = {
         AND Casa.estado = 1
       GROUP BY Casa.id_casa;
     `;
-
-    const [results] = await db.query(sql, [idUsuario]);
+    const [results] = await db.execute(sql, [idUsuario]);
     return results;
   },
 
-  desactivarCasa: async (id) => {
+  async desactivarCasa(id) {
     const sql = `UPDATE Casa SET estado = 0 WHERE id_casa = ?`;
-    const [result] = await db.query(sql, [id]);
+    const [result] = await db.execute(sql, [id]);
     return { affectedRows: result.affectedRows };
   },
 
-  actualizarCasa: async (idCasa, data, imagenes) => {
+  async actualizarCasa(idCasa, data, imagenes) {
     const {
       titulo,
       descripcion,
@@ -193,8 +190,13 @@ const Casa = {
       cochera,
       pisos,
       id_ciudad,
-      estado
+      estado,
+      imagenes_existentes
     } = data;
+
+    const imagenesAConservar = typeof imagenes_existentes === 'string' 
+      ? JSON.parse(imagenes_existentes) 
+      : imagenes_existentes || [];
 
     const sqlUpdate = `
       UPDATE Casa SET
@@ -211,24 +213,31 @@ const Casa = {
       WHERE id_casa = ?
     `;
 
-    await db.query(sqlUpdate, [
+    await db.execute(sqlUpdate, [
       titulo, descripcion, precio, enlace_ubicacion,
       habitaciones, banos, cochera, pisos, id_ciudad, estado || 1, idCasa
     ]);
 
-    if (!imagenes || imagenes.length === 0) {
-      return { message: 'Casa actualizada sin cambiar imágenes' };
+    let sqlDeleteImgs = `DELETE FROM ImagenCasa WHERE id_casa = ?`;
+    let deleteParams = [idCasa];
+
+    if (imagenesAConservar.length > 0) {
+      const placeholders = imagenesAConservar.map(() => '?').join(',');
+      sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+      deleteParams = deleteParams.concat(imagenesAConservar);
     }
 
-    const sqlDeleteImgs = `DELETE FROM ImagenCasa WHERE id_casa = ?`;
-    await db.query(sqlDeleteImgs, [idCasa]);
+    await db.execute(sqlDeleteImgs, deleteParams);
 
-    const sqlInsertImgs = `INSERT INTO ImagenCasa (id_casa, url_imagen) VALUES ?`;
-    const valores = imagenes.map(img => [idCasa, `/imagenes/casas/${img.filename}`]);
-    await db.query(sqlInsertImgs, [valores]);
-
-    return { message: 'Casa actualizada con nuevas imágenes' };
-  },
+    if (imagenes && imagenes.length > 0) {
+      const sqlInsertImgs = `INSERT INTO ImagenCasa (id_casa, url_imagen) VALUES ?`;
+      const valores = imagenes.map(img => [idCasa, `/imagenes/casas/${img.filename}`]);
+      await db.query(sqlInsertImgs, [valores]);
+      return { message: 'Casa actualizada con imágenes modificadas' };
+    } else {
+      return { message: 'Casa actualizada (imágenes existentes conservadas)' };
+    }
+  }
 };
 
 module.exports = Casa;

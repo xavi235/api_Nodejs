@@ -1,7 +1,7 @@
 const db = require('../config/db');
 
 const Departamento = {
-  getDepartamentosPorEmpresaYCiudad: async (idEmpresa, idCiudad) => {
+  async getDepartamentosPorEmpresaYCiudad(idEmpresa, idCiudad) {
     const sql = `
       SELECT 
         Departamento.*,
@@ -23,11 +23,11 @@ const Departamento = {
       WHERE Usuario.id_empresa = ? AND Departamento.id_ciudad = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    const [results] = await db.query(sql, [idEmpresa, idCiudad]);
+    const [results] = await db.execute(sql, [idEmpresa, idCiudad]);
     return results;
   },
 
-  getDepartamentosDeUsuariosIndependientes: async () => {
+  async getDepartamentosDeUsuariosIndependientes() {
     const sql = `
       SELECT 
         Departamento.*,
@@ -50,11 +50,11 @@ const Departamento = {
       WHERE Usuario.id_empresa IS NULL AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    const [results] = await db.query(sql);
+    const [results] = await db.execute(sql);
     return results;
   },
 
-  getDepartamentoPorId: async (id) => {
+  async getDepartamentoPorId(id) {
     const sql = `
       SELECT 
         Departamento.*,
@@ -71,11 +71,11 @@ const Departamento = {
       WHERE Departamento.id_departamento = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    const [results] = await db.query(sql, [id]);
+    const [results] = await db.execute(sql, [id]);
     return results[0];
   },
 
-  getTodosLosDepartamentos: async () => {
+  async getTodosLosDepartamentos() {
     const sql = `
       SELECT 
         Departamento.*,
@@ -97,11 +97,11 @@ const Departamento = {
       WHERE Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-    const [results] = await db.query(sql);
+    const [results] = await db.execute(sql);
     return results;
   },
 
-  crearDepartamento: async (data, imagenes) => {
+  async crearDepartamento(data, imagenes) {
     const {
       titulo,
       descripcion,
@@ -122,7 +122,7 @@ const Departamento = {
       ) VALUES (?, ?, ?, DEFAULT, ?, ?, ?, ?, ?, ?)
     `;
 
-    const [result] = await db.query(sql, [
+    const [result] = await db.execute(sql, [
       titulo, descripcion, precio,
       enlace_ubicacion, habitaciones, banos, piso,
       id_usuario, id_ciudad
@@ -144,7 +144,7 @@ const Departamento = {
     return { id_departamento };
   },
 
-  getDepartamentosPorUsuario: async (idUsuario) => {
+  async getDepartamentosPorUsuario(idUsuario) {
     const sql = `
       SELECT 
         Departamento.*,
@@ -167,18 +167,17 @@ const Departamento = {
       WHERE Usuario.id_usuario = ? AND Departamento.estado = 1
       GROUP BY Departamento.id_departamento;
     `;
-
-    const [results] = await db.query(sql, [idUsuario]);
+    const [results] = await db.execute(sql, [idUsuario]);
     return results;
   },
 
-  desactivarDepartamento: async (id) => {
+  async desactivarDepartamento(id) {
     const sql = `UPDATE Departamento SET estado = 0 WHERE id_departamento = ?`;
-    const [result] = await db.query(sql, [id]);
+    const [result] = await db.execute(sql, [id]);
     return { affectedRows: result.affectedRows };
   },
 
-  actualizarDepartamento: async (idDepartamento, data, imagenes) => {
+  async actualizarDepartamento(idDepartamento, data, imagenes) {
     const {
       titulo,
       descripcion,
@@ -188,8 +187,13 @@ const Departamento = {
       banos,
       piso,
       id_ciudad,
-      estado
+      estado,
+      imagenes_existentes
     } = data;
+
+    const imagenesAConservar = typeof imagenes_existentes === 'string' 
+      ? JSON.parse(imagenes_existentes) 
+      : imagenes_existentes || [];
 
     const sqlUpdate = `
       UPDATE Departamento SET
@@ -205,24 +209,31 @@ const Departamento = {
       WHERE id_departamento = ?
     `;
 
-    await db.query(sqlUpdate, [
+    await db.execute(sqlUpdate, [
       titulo, descripcion, precio, enlace_ubicacion,
       habitaciones, banos, piso, id_ciudad, estado || 1, idDepartamento
     ]);
 
-    if (!imagenes || imagenes.length === 0) {
-      return { message: 'departamento actualizada sin cambiar imágenes' };
+    let sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
+    let deleteParams = [idDepartamento];
+
+    if (imagenesAConservar.length > 0) {
+      const placeholders = imagenesAConservar.map(() => '?').join(',');
+      sqlDeleteImgs += ` AND url_imagen NOT IN (${placeholders})`;
+      deleteParams = deleteParams.concat(imagenesAConservar);
     }
 
-    const sqlDeleteImgs = `DELETE FROM ImagenDepartamento WHERE id_departamento = ?`;
-    await db.query(sqlDeleteImgs, [idDepartamento]);
+    await db.execute(sqlDeleteImgs, deleteParams);
 
-    const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
-    const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
-    await db.query(sqlInsertImgs, [valores]);
-
-    return { message: 'Departamento actualizado con nuevas imágenes' };
-  },
+    if (imagenes && imagenes.length > 0) {
+      const sqlInsertImgs = `INSERT INTO ImagenDepartamento (id_departamento, url_imagen) VALUES ?`;
+      const valores = imagenes.map(img => [idDepartamento, `/imagenes/departamentos/${img.filename}`]);
+      await db.query(sqlInsertImgs, [valores]);
+      return { message: 'Departamento actualizado con imágenes modificadas' };
+    } else {
+      return { message: 'Departamento actualizado (imágenes existentes conservadas)' };
+    }
+  }
 };
 
 module.exports = Departamento;
