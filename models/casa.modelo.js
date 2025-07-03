@@ -101,7 +101,7 @@ const Casa = {
     const [results] = await db.execute(sql);
     return results;
   },
-
+  
   async crearCasa(data, imagenes) {
     const {
       titulo,
@@ -112,9 +112,11 @@ const Casa = {
       banos,
       cochera,
       pisos,
-      id_usuario,
-      id_ciudad
+      id_usuario
     } = data;
+
+    const id_ciudad = await getCiudadDeEmpresaPorUsuario(id_usuario);
+    if (!id_ciudad) throw new Error('No se pudo determinar la ciudad de la empresa del usuario.');
 
     const sql = `
       INSERT INTO Casa (
@@ -138,9 +140,7 @@ const Casa = {
       INSERT INTO ImagenCasa (id_casa, url_imagen)
       VALUES ?
     `;
-
     const valores = imagenes.map(img => [id_casa, `/imagenes/casas/${img.filename}`]);
-
     await db.query(sqlImagenes, [valores]);
 
     return { id_casa };
@@ -238,6 +238,18 @@ const Casa = {
       return { message: 'Casa actualizada (imágenes existentes conservadas)' };
     }
   }
+};
+
+const getCiudadDeEmpresaPorUsuario = async (idUsuario) => {
+  const sql = `
+    SELECT ec.id_ciudad
+    FROM Usuario u
+    JOIN EmpresaCiudad ec ON u.id_empresa = ec.id_empresa
+    WHERE u.id_usuario = ?
+    LIMIT 1
+  `;
+  const [rows] = await db.execute(sql, [idUsuario]);
+  return rows.length > 0 ? rows[0].id_ciudad : null;
 };
 
 module.exports = Casa;

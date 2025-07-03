@@ -111,8 +111,10 @@ const Alquiler = {
       tiempo_minimo_meses,
       incluye_servicios,
       id_usuario,
-      id_ciudad
     } = data;
+
+    const id_ciudad = await getCiudadDeEmpresaPorUsuario(id_usuario);
+    if (!id_ciudad) throw new Error('No se pudo determinar la ciudad de la empresa del usuario.');
 
     const sql = `
       INSERT INTO Alquiler (
@@ -236,6 +238,17 @@ const Alquiler = {
       return { message: 'Alquiler actualizado (imágenes existentes conservadas)' };
     }
   }
+};
+const getCiudadDeEmpresaPorUsuario = async (idUsuario) => {
+  const sql = `
+    SELECT ec.id_ciudad
+    FROM Usuario u
+    JOIN EmpresaCiudad ec ON u.id_empresa = ec.id_empresa
+    WHERE u.id_usuario = ?
+    LIMIT 1
+  `;
+  const [rows] = await db.execute(sql, [idUsuario]);
+  return rows.length > 0 ? rows[0].id_ciudad : null;
 };
 
 module.exports = Alquiler;
